@@ -7,6 +7,8 @@ Deep reinforcement learning agent collecting bananas
 
 # Installation instructions
 
+
+
 Clone this git repository including the submodules: 
 
     git clone --recurse-submodules https://github.com/jwergieluk/deep_banana_eater.git
@@ -19,6 +21,14 @@ Required Python modules (see also requirements.txt)
 Installation instructions for mlagents module can be found under 
 https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Installation.md
 Alternatively, the mlagents is a submodule of this repository. 
+
+Clone the repository
+
+    https://github.com/udacity/deep-reinforcement-learning.git
+    
+navigate to the `deep-reinforcement-learning/python` directory and install the package with 
+`pip install .`.
+
 
 
 # Questions

@@ -7,6 +7,8 @@ Deep reinforcement learning agent collecting bananas
 
 # Installation instructions
 
+* Unity's mlagents package require Python 3.6
+
 
 
 Clone this git repository including the submodules: 

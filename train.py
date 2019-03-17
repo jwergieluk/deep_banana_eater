@@ -157,10 +157,7 @@ def test(env: UnityEnvWrapper, agent):
 
 def main(device):
     env = UnityEnvWrapper()
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     agent = Agent0(env.state_space_dim, env.action_space_size, device)
-
     train(env, agent)
 
     #test(env, agent)
@@ -168,5 +165,5 @@ def main(device):
 
 
 if __name__ == '__main__':
-
-    main()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    main(device)

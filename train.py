@@ -1,6 +1,9 @@
 import numpy
 import random
 from unityagents import UnityEnvironment
+import torch
+import torch.nn
+import torch.optim
 
 
 class Agent2:
@@ -60,10 +63,29 @@ class Agent2:
         return numpy.argmax(self.Q, axis=1)
 
 
+class QNet(torch.nn.Module):
+    def __init__(self, input_dim: int, action_no):
+        super().__init__()
+        self._net = torch.nn.Sequential(
+            torch.nn.Linear(input_dim, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, action_no)
+        )
+
+    def forward(self, x):
+        return self._net(x)
+
+
 class Agent0:
-    def __init__(self, state_space_dim: int, no_actions: int):
+    def __init__(self, state_space_dim: int, no_actions: int, device):
         self.no_actions = no_actions
         self.state_space_dim = state_space_dim
+
+        self.q_net = QNet(self.state_space_dim, self.no_actions)
+        self.q_net.to(device)
+
 
     def get_action(self, state):
         return numpy.random.randint(self.no_actions)
@@ -133,9 +155,11 @@ def test(env: UnityEnvWrapper, agent):
             break
 
 
-def main():
+def main(device):
     env = UnityEnvWrapper()
-    agent = Agent0(env.state_space_dim, env.action_space_size)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    agent = Agent0(env.state_space_dim, env.action_space_size, device)
 
     train(env, agent)
 
@@ -144,4 +168,5 @@ def main():
 
 
 if __name__ == '__main__':
+
     main()

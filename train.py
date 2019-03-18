@@ -4,6 +4,8 @@ from unityagents import UnityEnvironment
 import torch
 import torch.nn
 import torch.optim
+from collections import deque, namedtuple
+from tqdm import tqdm
 
 
 class Agent2:
@@ -78,26 +80,111 @@ class QNet(torch.nn.Module):
         return self._net(x)
 
 
+class ReplayBuffer:
+    """Fixed-size buffer to store experience tuples."""
+
+    def __init__(self, state_space_dim, no_actions, buffer_size, batch_size):
+        """Initialize a ReplayBuffer object.
+
+        Params
+        ======
+            no_actions (int): dimension of each action
+            buffer_size (int): maximum size of buffer
+            batch_size (int): size of each training batch
+        """
+        self.no_actions = no_actions
+        self.memory = deque(maxlen=buffer_size)  
+        self.batch_size = batch_size
+        self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
+    
+    def add(self, state, action, reward, next_state, done):
+        """Add a new experience to memory."""
+        e = self.experience(state, action, reward, next_state, done)
+        self.memory.append(e)
+    
+    def sample(self):
+        """Randomly sample a batch of experiences from memory."""
+        experiences = random.sample(self.memory, k=self.batch_size)
+
+        states = torch.from_numpy(numpy.vstack([e.state for e in experiences if e is not None])).float().to(device)
+        actions = torch.from_numpy(numpy.vstack([e.action for e in experiences if e is not None])).long().to(device)
+        rewards = torch.from_numpy(numpy.vstack([e.reward for e in experiences if e is not None])).float().to(device)
+        next_states = torch.from_numpy(numpy.vstack([e.next_state for e in experiences if e is not None])).float().to(device)
+        dones = torch.from_numpy(numpy.vstack([e.done for e in experiences if e is not None]).astype(numpy.uint8)).float().to(device)
+        return states, actions, rewards, next_states, dones
+
+    def __len__(self):
+        """Return the current size of internal memory."""
+        return len(self.memory)
+
+
 class Agent0:
+    LEARNING_RATE = 0.001
+    UPDATE_EVERY = 120
+    REPLAY_BUFFER_SIZE = 1024
+    BATCH_SIZE = 32
+    GAMMA = 0.99
+
     def __init__(self, state_space_dim: int, no_actions: int, device):
         self.no_actions = no_actions
         self.state_space_dim = state_space_dim
 
         self.q_net = QNet(self.state_space_dim, self.no_actions)
         self.q_net.to(device)
+        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=self.LEARNING_RATE)
+        self.loss = torch.nn.MSELoss()
 
+        self._replay_buffer = ReplayBuffer(self.state_space_dim, self.no_actions, self.REPLAY_BUFFER_SIZE, self.BATCH_SIZE)
+        self.t = 1
+
+    def epsilon(self):
+        return 0.1
 
     def get_action(self, state):
-        return numpy.random.randint(self.no_actions)
+        if random.random() <= self.epsilon():
+            return random.randint(0, self.no_actions-1)
 
-    def learn(self, state, action, reward, next_state, done):
-        print('SARSA: ', state, action, reward, next_state)
+        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        self.q_net.eval()
+        with torch.no_grad():
+            action_values = self.q_net(state)
+        self.q_net.train()
+        return numpy.argmax(action_values.cpu().detach().numpy())
+
+    def learn(self, state: numpy.ndarray, action, reward, next_state, done):
+        self.t += 1
+        self._replay_buffer.add(state, action, reward, next_state, done)
+
+        if self.t % self.UPDATE_EVERY != 0:
+            return
+        if len(self._replay_buffer) < self.BATCH_SIZE:
+            return
+
+        states, actions, rewards, next_states, dones = self._replay_buffer.sample()
+
+        # Get max predicted Q values (for next states) from target model
+        Q_targets_next = self.q_net(next_states).detach().max(1)[0].unsqueeze(1)
+        # Compute Q targets for current states 
+        Q_targets = rewards + (self.GAMMA * Q_targets_next * (1 - dones))
+
+        # Get expected Q values from local model
+        Q_expected = self.q_net(states).gather(1, actions)
+
+        # Compute loss
+        loss_value = self.loss(Q_expected, Q_targets)
+        # Minimize the loss
+        self.optimizer.zero_grad()
+        loss_value.backward()
+        self.optimizer.step()
+
+        # ------------------- update target network ------------------- #
+        # self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
 
 
 class UnityEnvWrapper:
     """ This class provides gym-like wrapper around the unity environment """
 
-    def __init__(self, env_file: str = 'Banana_Linux/Banana.x86_64'):
+    def __init__(self, env_file: str = 'Banana_Linux_NoVis/Banana.x86_64'):
         self._env = UnityEnvironment(file_name=env_file)
         self._brain_name = self._env.brain_names[0]
         self._brain = self._env.brains[self._brain_name]
@@ -128,10 +215,9 @@ def train(env, agent, max_episodes: int = 2):
     for episode in range(max_episodes):
         state = env.reset(train_mode=True)
         score = 0
-        for i in range(200):
+        for i in tqdm(range(1000), ascii=True):
             action = agent.get_action(state)
             next_state, reward, done, _ = env.step(action)
-
             agent.learn(state, action, reward, next_state, done)
 
             score += reward
@@ -143,11 +229,11 @@ def train(env, agent, max_episodes: int = 2):
 def test(env: UnityEnvWrapper, agent):
     state = env.reset(train_mode=False)
     score = 0
-    for i in range(200):
+    for i in range(5):
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)
 
-        print('SARSA: ', state, action, reward, next_state)
+        print('Action: ', action, 'Reward: ', reward)
 
         score += reward
         state = next_state
@@ -167,3 +253,4 @@ def main(device):
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     main(device)
+

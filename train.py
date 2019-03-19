@@ -71,9 +71,9 @@ class QNet(torch.nn.Module):
         self._net = torch.nn.Sequential(
             torch.nn.Linear(input_dim, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 32),
+            torch.nn.Linear(64, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(32, action_no)
+            torch.nn.Linear(64, action_no)
         )
 
     def forward(self, x):
@@ -102,7 +102,7 @@ class ReplayBuffer:
         e = self.experience(state, action, reward, next_state, done)
         self.memory.append(e)
     
-    def sample(self):
+    def sample(self, device):
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
@@ -119,15 +119,16 @@ class ReplayBuffer:
 
 
 class Agent0:
-    LEARNING_RATE = 0.001
-    UPDATE_EVERY = 120
-    REPLAY_BUFFER_SIZE = 1024
-    BATCH_SIZE = 32
+    LEARNING_RATE = 0.0005
+    UPDATE_EVERY = 4
+    REPLAY_BUFFER_SIZE = 100_000
+    BATCH_SIZE = 64
     GAMMA = 0.99
 
     def __init__(self, state_space_dim: int, no_actions: int, device):
         self.no_actions = no_actions
         self.state_space_dim = state_space_dim
+        self.device = device
 
         self.q_net = QNet(self.state_space_dim, self.no_actions)
         self.q_net.to(device)
@@ -137,14 +138,17 @@ class Agent0:
         self._replay_buffer = ReplayBuffer(self.state_space_dim, self.no_actions, self.REPLAY_BUFFER_SIZE, self.BATCH_SIZE)
         self.t = 1
 
+    def summary(self):
+        print('replay_buffer size', len(self._replay_buffer))
+
     def epsilon(self):
-        return 0.1
+        return 0.005
 
     def get_action(self, state):
         if random.random() <= self.epsilon():
             return random.randint(0, self.no_actions-1)
 
-        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
         self.q_net.eval()
         with torch.no_grad():
             action_values = self.q_net(state)
@@ -160,7 +164,7 @@ class Agent0:
         if len(self._replay_buffer) < self.BATCH_SIZE:
             return
 
-        states, actions, rewards, next_states, dones = self._replay_buffer.sample()
+        states, actions, rewards, next_states, dones = self._replay_buffer.sample(self.device)
 
         # Get max predicted Q values (for next states) from target model
         Q_targets_next = self.q_net(next_states).detach().max(1)[0].unsqueeze(1)
@@ -179,6 +183,19 @@ class Agent0:
 
         # ------------------- update target network ------------------- #
         # self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
+
+    def soft_update(self, local_model, target_model, tau):
+        """Soft update model parameters.
+        θ_target = τ*θ_local + (1 - τ)*θ_target
+
+        Params
+        ======
+            local_model (PyTorch model): weights will be copied from
+            target_model (PyTorch model): weights will be copied to
+            tau (float): interpolation parameter
+        """
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
 class UnityEnvWrapper:
@@ -211,11 +228,12 @@ class UnityEnvWrapper:
         self._env.close()
 
 
-def train(env, agent, max_episodes: int = 2):
-    for episode in range(max_episodes):
+def train(env, agent, max_episodes: int = 2000):
+    # sink = tensorboardX.SummaryWriter(f'runs/dqn-{random.randint(0, 1000)}')
+    for episode in range(1, max_episodes):
         state = env.reset(train_mode=True)
         score = 0
-        for i in tqdm(range(1000), ascii=True):
+        for step in range(1, 1000):
             action = agent.get_action(state)
             next_state, reward, done, _ = env.step(action)
             agent.learn(state, action, reward, next_state, done)
@@ -224,6 +242,8 @@ def train(env, agent, max_episodes: int = 2):
             state = next_state
             if done:
                 break
+        # sink.add_scalar(episode, 'final_score', score)
+        print(f'Episode {episode} done in {step} steps. Final score {score}.')
 
 
 def test(env: UnityEnvWrapper, agent):
@@ -251,6 +271,5 @@ def main(device):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    main(device)
+    main(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
 

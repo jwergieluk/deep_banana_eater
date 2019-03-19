@@ -20,6 +20,7 @@ Required Python modules (see also requirements.txt)
 * pytorch
 * mlagents (Unity's ML Agents)
 * tensorboardX
+* click
 
 Installation instructions for mlagents module can be found under 
 https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Installation.md

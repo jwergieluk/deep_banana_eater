@@ -5,7 +5,10 @@ import torch
 import torch.nn
 import torch.optim
 from collections import deque, namedtuple
-from tqdm import tqdm
+import click
+
+
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Agent2:
@@ -138,11 +141,15 @@ class Agent0:
         self._replay_buffer = ReplayBuffer(self.state_space_dim, self.no_actions, self.REPLAY_BUFFER_SIZE, self.BATCH_SIZE)
         self.t = 1
 
-    def summary(self):
-        print('replay_buffer size', len(self._replay_buffer))
+    def load_weights(self, file_name: str):
+        self.q_net.load_state_dict(torch.load(file_name))
+        self.q_net.eval()
+
+    def save_weights(self, file_name: str):
+        torch.save(self.q_net.state_dict(), file_name)
 
     def epsilon(self):
-        return 0.005
+        return 0.002
 
     def get_action(self, state):
         if random.random() <= self.epsilon():
@@ -228,7 +235,19 @@ class UnityEnvWrapper:
         self._env.close()
 
 
-def train(env, agent, max_episodes: int = 2000):
+@click.group()
+@click.version_option()
+def cli():
+    """ deep_banana_eater """
+
+
+@cli.command('train')
+@click.option('--save-weights-to', type=click.Path(dir_okay=False, file_okay=True, writable=True, readable=True))
+@click.option('--max-episodes', type=click.INT, default=2000)
+def train(save_weights_to: str, max_episodes: int):
+    env = UnityEnvWrapper('Banana_Linux_NoVis/Banana.x86_64')
+    agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
+
     # sink = tensorboardX.SummaryWriter(f'runs/dqn-{random.randint(0, 1000)}')
     for episode in range(1, max_episodes):
         state = env.reset(train_mode=True)
@@ -244,12 +263,19 @@ def train(env, agent, max_episodes: int = 2000):
                 break
         # sink.add_scalar(episode, 'final_score', score)
         print(f'Episode {episode} done in {step} steps. Final score {score}.')
+    agent.save_weights(save_weights_to)
 
 
-def test(env: UnityEnvWrapper, agent):
+@cli.command('test')
+@click.option('--load-weights-from', type=click.Path(dir_okay=False, file_okay=True, readable=True, exists=True))
+def test(load_weights_from: str):
+    env = UnityEnvWrapper('Banana_Linux/Banana.x86_64')
+    agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
+    agent.load_weights(load_weights_from)
+
     state = env.reset(train_mode=False)
     score = 0
-    for i in range(5):
+    for _ in range(1000):
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)
 
@@ -259,17 +285,9 @@ def test(env: UnityEnvWrapper, agent):
         state = next_state
         if done:
             break
-
-
-def main(device):
-    env = UnityEnvWrapper()
-    agent = Agent0(env.state_space_dim, env.action_space_size, device)
-    train(env, agent)
-
-    #test(env, agent)
     env.close()
 
 
 if __name__ == '__main__':
-    main(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
+    cli()
 

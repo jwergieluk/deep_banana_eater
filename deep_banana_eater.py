@@ -1,3 +1,5 @@
+import math
+import datetime
 import numpy
 import random
 from unityagents import UnityEnvironment
@@ -144,12 +146,14 @@ class Agent0:
     def load_weights(self, file_name: str):
         self.q_net.load_state_dict(torch.load(file_name))
         self.q_net.eval()
+        self.t = 1800.0*300.0
 
     def save_weights(self, file_name: str):
         torch.save(self.q_net.state_dict(), file_name)
+        print(f'DQN weights saved to {file_name}.')
 
     def epsilon(self):
-        return 0.002
+        return math.exp(-self.t*0.00003)
 
     def get_action(self, state):
         if random.random() <= self.epsilon():
@@ -242,9 +246,8 @@ def cli():
 
 
 @cli.command('train')
-@click.option('--save-weights-to', type=click.Path(dir_okay=False, file_okay=True, writable=True, readable=True))
 @click.option('--max-episodes', type=click.INT, default=2000)
-def train(save_weights_to: str, max_episodes: int):
+def train(max_episodes: int):
     env = UnityEnvWrapper('Banana_Linux_NoVis/Banana.x86_64')
     agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
 
@@ -263,7 +266,8 @@ def train(save_weights_to: str, max_episodes: int):
                 break
         # sink.add_scalar(episode, 'final_score', score)
         print(f'Episode {episode} done in {step} steps. Final score {score}.')
-    agent.save_weights(save_weights_to)
+    now_str = datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
+    agent.save_weights(f'weights-{now_str}.bin')
 
 
 @cli.command('test')
@@ -275,11 +279,11 @@ def test(load_weights_from: str):
 
     state = env.reset(train_mode=False)
     score = 0
-    for _ in range(1000):
+    for step in range(1000):
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)
 
-        print('Action: ', action, 'Reward: ', reward)
+        print(f'Step {step}. Action {action}. Reward {reward}.')
 
         score += reward
         state = next_state

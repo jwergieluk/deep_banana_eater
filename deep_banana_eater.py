@@ -150,7 +150,7 @@ class Agent0:
 
     def save_weights(self, file_name: str):
         torch.save(self.q_net.state_dict(), file_name)
-        print(f'DQN weights saved to {file_name}.')
+        print(f'DQN weights saved to {file_name}')
 
     def epsilon(self):
         return math.exp(-self.t*0.00003)
@@ -252,6 +252,7 @@ def train(max_episodes: int):
     agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
 
     # sink = tensorboardX.SummaryWriter(f'runs/dqn-{random.randint(0, 1000)}')
+    scores = []
     for episode in range(1, max_episodes):
         state = env.reset(train_mode=True)
         score = 0
@@ -265,9 +266,11 @@ def train(max_episodes: int):
             if done:
                 break
         # sink.add_scalar(episode, 'final_score', score)
-        print(f'Episode {episode} done in {step} steps. Final score {score}.')
+        scores.append(score)
+        rolling_average_score = sum(scores[-100:])/min(episode, 100)
+        print(f'Final score {score}. Average score for the last 100 episodes {rolling_average_score}.')
     now_str = datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
-    agent.save_weights(f'weights-{now_str}.bin')
+    agent.save_weights(f'runs/weights-{now_str}.bin')
 
 
 @cli.command('test')
@@ -289,6 +292,7 @@ def test(load_weights_from: str):
         state = next_state
         if done:
             break
+    print(f'Final score {score}.')
     env.close()
 
 

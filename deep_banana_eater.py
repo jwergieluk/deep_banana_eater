@@ -1,5 +1,9 @@
 import math
 import datetime
+import os
+
+import pandas
+import matplotlib.pyplot as plt
 import numpy
 import random
 from unityagents import UnityEnvironment
@@ -153,7 +157,7 @@ class Agent0:
         print(f'DQN weights saved to {file_name}')
 
     def epsilon(self):
-        return math.exp(-self.t*0.00003)
+        return math.exp(-self.t*0.00002)
 
     def get_action(self, state):
         if random.random() <= self.epsilon():
@@ -251,7 +255,7 @@ def train(max_episodes: int):
     env = UnityEnvWrapper('Banana_Linux_NoVis/Banana.x86_64')
     agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
 
-    # sink = tensorboardX.SummaryWriter(f'runs/dqn-{random.randint(0, 1000)}')
+    data = []
     scores = []
     for episode in range(1, max_episodes):
         state = env.reset(train_mode=True)
@@ -265,12 +269,21 @@ def train(max_episodes: int):
             state = next_state
             if done:
                 break
-        # sink.add_scalar(episode, 'final_score', score)
         scores.append(score)
         rolling_average_score = sum(scores[-100:])/min(episode, 100)
+        data.append([score, rolling_average_score])
         print(f'Final score {score}. Average score for the last 100 episodes {rolling_average_score}.')
+    # Save weights and score series
     now_str = datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
+    os.makedirs('runs', exist_ok=True)
     agent.save_weights(f'runs/weights-{now_str}.bin')
+
+    df = pandas.DataFrame(data=data, index=range(1, max_episodes), columns=['score', 'rolling_avg_score'])
+    df.to_csv(f'runs/scores-{now_str}.csv')
+    plt.figure(figsize=(8, 6), dpi=120)
+    plt.tight_layout()
+    df['rolling_avg_score'].plot(grid=True, colormap='cubehelix')
+    plt.savefig(f'runs/scores-{now_str}.png')
 
 
 @cli.command('test')

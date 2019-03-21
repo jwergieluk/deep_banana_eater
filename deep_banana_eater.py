@@ -16,21 +16,6 @@ import click
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class QNet(torch.nn.Module):
-    def __init__(self, input_dim: int, action_no):
-        super().__init__()
-        self._net = torch.nn.Sequential(
-            torch.nn.Linear(input_dim, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, action_no)
-        )
-
-    def forward(self, x):
-        return self._net(x)
-
-
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
 
@@ -51,8 +36,7 @@ class ReplayBuffer:
         actions = torch.from_numpy(numpy.vstack([e.action for e in experiences])).long().to(device)
         rewards = torch.from_numpy(numpy.vstack([e.reward for e in experiences])).float().to(device)
         next_states = torch.from_numpy(numpy.vstack([e.next_state for e in experiences])).float().to(device)
-        dones = torch.from_numpy(
-            numpy.vstack([e.done for e in experiences if e is not None]).astype(numpy.uint8)).float().to(device)
+        dones = torch.from_numpy(numpy.vstack([e.done for e in experiences]).astype(numpy.uint8)).float().to(device)
         return states, actions, rewards, next_states, dones
 
     def __len__(self):
@@ -60,16 +44,32 @@ class ReplayBuffer:
         return len(self.memory)
 
 
+class QNet(torch.nn.Module):
+    """ Deep Q Network approximating the state-action value function """
+    def __init__(self, input_dim: int, action_no):
+        super().__init__()
+        self._net = torch.nn.Sequential(
+            torch.nn.Linear(input_dim, 96),
+            torch.nn.ReLU(),
+            torch.nn.Linear(96, 96),
+            torch.nn.ReLU(),
+            torch.nn.Linear(96, action_no)
+        )
+
+    def forward(self, x):
+        return self._net(x)
+
+
 class Agent0:
     LEARNING_RATE = 0.0005
     UPDATE_EVERY = 4
     REPLAY_BUFFER_SIZE = 100_000
-    BATCH_SIZE = 64
+    BATCH_SIZE = 128
     GAMMA = 0.99
 
     def __init__(self, state_space_dim: int, no_actions: int, device):
-        self.no_actions = no_actions
         self.state_space_dim = state_space_dim
+        self.no_actions = no_actions
         self.device = device
 
         self.q_net = QNet(self.state_space_dim, self.no_actions)
@@ -78,21 +78,24 @@ class Agent0:
         self.loss = torch.nn.MSELoss()
 
         self._replay_buffer = ReplayBuffer(self.REPLAY_BUFFER_SIZE)
-        self.t = 1
+        self.t = 1   # counts the calls to the learn() method
 
     def load_weights(self, file_name: str):
+        """ Loads the DQN weights from a file and sets the Agent to test mode """
         self.q_net.load_state_dict(torch.load(file_name))
         self.q_net.eval()
         self.t = 1800.0*300.0
 
     def save_weights(self, file_name: str):
+        """ Save DQN weights to file """
         torch.save(self.q_net.state_dict(), file_name)
-        print(f'DQN weights saved to {file_name}')
 
     def epsilon(self):
-        return math.exp(-self.t*0.00003)
+        """ Returns the probability of taking a random action during the training time """
+        return math.exp(-self.t*0.00002)
 
     def get_action(self, state):
+        """ Produce an optimal action for a given state """
         if random.random() <= self.epsilon():
             return random.randint(0, self.no_actions-1)
 
@@ -103,7 +106,7 @@ class Agent0:
         self.q_net.train()
         return numpy.argmax(action_values.cpu().detach().numpy())
 
-    def learn(self, state: numpy.ndarray, action, reward, next_state, done):
+    def learn(self, state, action, reward, next_state, done):
         self.t += 1
         self._replay_buffer.add(state, action, reward, next_state, done)
 
@@ -115,16 +118,13 @@ class Agent0:
         states, actions, rewards, next_states, dones = self._replay_buffer.sample(self.BATCH_SIZE, self.device)
 
         # Get max predicted Q values (for next states) from target model
-        Q_targets_next = self.q_net(next_states).detach().max(1)[0].unsqueeze(1)
+        q_targets_next = self.q_net(next_states).detach().max(1)[0].unsqueeze(1)
         # Compute Q targets for current states 
-        Q_targets = rewards + (self.GAMMA * Q_targets_next * (1 - dones))
-
+        q_targets = rewards + (self.GAMMA * q_targets_next * (1 - dones))
         # Get expected Q values from local model
-        Q_expected = self.q_net(states).gather(1, actions)
+        q_expected = self.q_net(states).gather(1, actions)
 
-        # Compute loss
-        loss_value = self.loss(Q_expected, Q_targets)
-        # Minimize the loss
+        loss_value = self.loss(q_expected, q_targets)
         self.optimizer.zero_grad()
         loss_value.backward()
         self.optimizer.step()
@@ -176,15 +176,8 @@ class UnityEnvWrapper:
         self._env.close()
 
 
-@click.group()
-@click.version_option()
-def cli():
-    """ deep_banana_eater """
-
-
-@cli.command('train')
-@click.option('--max-episodes', type=click.INT, default=2000)
 def train(max_episodes: int):
+    """ Train the agent using a head-less environment and save the DQN weights when done """
     env = UnityEnvWrapper('Banana_Linux_NoVis/Banana.x86_64')
     agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
 
@@ -193,7 +186,7 @@ def train(max_episodes: int):
     for episode in range(1, max_episodes):
         state = env.reset(train_mode=True)
         score = 0
-        for step in range(1, 1000):
+        for step in range(1, 300):
             action = agent.get_action(state)
             next_state, reward, done, _ = env.step(action)
             agent.learn(state, action, reward, next_state, done)
@@ -211,6 +204,7 @@ def train(max_episodes: int):
     os.makedirs('runs', exist_ok=True)
     agent.save_weights(f'runs/weights-{now_str}.bin')
 
+    # Plot average scores
     df = pandas.DataFrame(data=data, index=range(1, max_episodes), columns=['score', 'rolling_avg_score'])
     df.to_csv(f'runs/scores-{now_str}.csv')
     plt.figure(figsize=(8, 6), dpi=120)
@@ -219,16 +213,15 @@ def train(max_episodes: int):
     plt.savefig(f'runs/scores-{now_str}.png')
 
 
-@cli.command('test')
-@click.option('--load-weights-from', type=click.Path(dir_okay=False, file_okay=True, readable=True, exists=True))
-def test(load_weights_from: str):
+def test(weights_file_name: str):
+    """ Load DQN weights and run the agent """
     env = UnityEnvWrapper('Banana_Linux/Banana.x86_64')
     agent = Agent0(env.state_space_dim, env.action_space_size, DEVICE)
-    agent.load_weights(load_weights_from)
+    agent.load_weights(weights_file_name)
 
     state = env.reset(train_mode=False)
     score = 0
-    for step in range(1000):
+    for step in range(1, 300):
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)
 
@@ -242,6 +235,25 @@ def test(load_weights_from: str):
     env.close()
 
 
+@click.group()
+@click.version_option()
+def cli():
+    """ deep_banana_eater -- command line interface """
+
+
+@cli.command('train')
+@click.option('--max-episodes', type=click.INT, default=2000)
+def train_command(max_episodes: int):
+    """ Train the agent using a head-less environment and save the DQN weights when done """
+    train(max_episodes)
+
+
+@cli.command('test')
+@click.option('--load-weights-from', type=click.Path(dir_okay=False, file_okay=True, readable=True, exists=True))
+def test_command(load_weights_from: str):
+    """ Load DQN weights and run the agent """
+    test(load_weights_from)
+
+
 if __name__ == '__main__':
     cli()
-

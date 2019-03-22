@@ -1,13 +1,18 @@
-# deep_banana_eater
+# Deep banana eater
 
-Deep reinforcement learning agent collecting bananas
+A deep reinforcement learning agent collecting bananas.
 
-# Requirements
+This is a Python implementation of deep-q-network based reinforcement learning agent 
+learning to collect yellow bananas and avoid blue bananas in a simulated 3D environment. 
 
-* The README describes the the project environment details (i.e., the state and
-  action spaces, and when the environment is considered solved).
+![Environment screenshot](env-screenshot.png)
 
-For this project, you will train an agent to navigate (and collect bananas!) in a large, square world.
+# Description of the environment
+
+State and action space, rewards; when is the env solved?
+
+For this project, you will train an agent to navigate (and collect bananas!) in
+a large, square world.
 
 A reward of +1 is provided for collecting a yellow banana, and a reward of -1
 is provided for collecting a blue banana. Thus, the goal of your agent is to
@@ -23,45 +28,80 @@ discrete actions are available, corresponding to:
     2 - turn left.
     3 - turn right.
 
-The task is episodic, and in order to solve the environment, your agent must get an average score of +13 over 100 consecutive episodes.
-
-* The README has instructions for installing dependencies or downloading needed files.
-* The README describes how to run the code in the repository, to train the agent.
+The task is episodic, and in order to solve the environment, your agent must
+get an average score of +13 over 100 consecutive episodes.
 
 # Installation instructions
 
-* Unity's mlagents package requires Python 3.6
+The scripts in this repository require Python 3.6 and the following packages to run properly: 
 
+* pytorch 1.0
+* numpy
+* pandas
+* matplotlib
+* requests
 
+The installation instructions are as follows (tested on a Linux system): 
 
-Clone this git repository including the submodules: 
+0. Clone this repository using
+```commandline
+git clone https://github.com/jwergieluk/deep_banana_eater.git
+```
 
-    git clone --recurse-submodules https://github.com/jwergieluk/deep_banana_eater.git
+1. Install Anaconda Python distribution: https://www.anaconda.com/distribution/#download-section
+2. Create a virtual environment with all the necessary packages and activate it:
 
-Required Python modules (see also requirements.txt)
+```commandline
+conda create -n deep_banana_eater -c pytorch python=3.6 pytorch torchvision numpy pandas matplotlib requests
+conda activate deep_banana_eater
+```
 
-* pytorch
-* mlagents (Unity's ML Agents)
-* tensorboardX
-* click
+3. Clone Udacity's `deep-reinforcement-learning` repository and install the necessary Python package
+into the environment:
+```commandline
+git clone https://github.com/udacity/deep-reinforcement-learning.git
+cd deep-reinforcement-learning/python 
+pip install .
+```
 
-Installation instructions for mlagents module can be found under 
-https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Installation.md
-Alternatively, the mlagents is a submodule of this repository. 
+4. Download the environment files using the provided script:
+```commandline
+python download_external_dependencies.py
+```
 
-Clone the repository
+5. Clone and install the `ml-agents` package provided by Unity: 
+```commandline
+git clone https://github.com/Unity-Technologies/ml-agents.git
+cd ml-agents/ml-agents
+pip install .
+```
 
-    https://github.com/udacity/deep-reinforcement-learning.git
-    
-navigate to the `deep-reinforcement-learning/python` directory and install the package with 
-`pip install .`.
+All development and testing of this code was performed on an Arch Linux system in Mar 2019. 
 
+# Usage
 
+## Watch a trained agent
 
-# Questions
+Use the following command to load a pretrained agent and watch the agent's interactions with the environment: 
+```commandline
+python deep_banana_eater.py test --load-weights-from dqn-weights.bin
+```
 
-* How to control the stand-alone environment?
+## Training the agent
 
+The `train` command of the `deep_banana_eater.py` script can be used to train an agent 
+and save the learned parameters to disk: 
+```commandline
+python deep_banana_eater.py train --max-episodes 1800
+```
+
+The above command runs 1800 training episodes and saves the results to the `runs` directory.
+
+# License
+
+deep_banana_eater is released under the MIT License. See LICENSE file for details.
+
+Copyright (c) 2019 Julian Wergieluk
 
 # Instructions from Udacity (delete this)
 

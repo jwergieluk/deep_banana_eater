@@ -3,7 +3,7 @@
 A deep reinforcement learning agent collecting bananas.
 
 This is a Python implementation of deep-q-network based reinforcement learning agent 
-learning to collect yellow bananas and to avoid blue bananas in a simulated 3D environment. 
+learning to collect yellow bananas and avoid blue bananas in a simulated 3D environment. 
 
 ![Environment screenshot](env-screenshot.png)
 
@@ -20,31 +20,37 @@ The scripts in this repository require Python 3.6 and following packages to run 
 The installation instructions are as follows (tested on a Linux system): 
 
 0. Clone this repository using
-
-    git clone https://github.com/jwergieluk/deep_banana_eater.git
+```commandline
+git clone https://github.com/jwergieluk/deep_banana_eater.git
+```
 
 1. Install Anaconda Python distribution: https://www.anaconda.com/distribution/#download-section
 2. Create a virtual environment with all the necessary packages and activate it:
 
-    conda create -n deep_banana_eater -c pytorch python=3.6 pytorch torchvision numpy pandas matplotlib requests
-    conda activate deep_banana_eater
+```commandline
+conda create -n deep_banana_eater -c pytorch python=3.6 pytorch torchvision numpy pandas matplotlib requests
+conda activate deep_banana_eater
+```
 
 3. Clone Udacity's `deep-reinforcement-learning` repository and install the necessary Python package
 into the environment:
-    
-    git clone https://github.com/udacity/deep-reinforcement-learning.git
-    cd deep-reinforcement-learning/python 
-    pip install .
+```commandline
+git clone https://github.com/udacity/deep-reinforcement-learning.git
+cd deep-reinforcement-learning/python 
+pip install .
+```
 
 4. Download the environment files using the provided script:
-
-    python download_external_dependencies.py 
+```commandline
+python download_external_dependencies.py
+```
 
 5. Clone and install the `ml-agents` package provided by Unity: 
-
-    git clone https://github.com/Unity-Technologies/ml-agents.git
-    cd ml-agents/ml-agents
-    pip install .
+```commandline
+git clone https://github.com/Unity-Technologies/ml-agents.git
+cd ml-agents/ml-agents
+pip install .
+```
 
 All development and testing of this code was performed on an Arch Linux system in Mar 2019. 
 
@@ -53,15 +59,17 @@ All development and testing of this code was performed on an Arch Linux system i
 ## Watch a trained agent
 
 Use the following command to load a pretrained agent and watch the agent's interactions with the environment: 
-
-    python deep_banana_eater.py test --load-weights-from dqn-weights.bin
+```commandline
+python deep_banana_eater.py test --load-weights-from dqn-weights.bin
+```
 
 ## Training the agent
 
 The `train` command of the `deep_banana_eater.py` script can be used to train an agent 
 and save the learned parameters to disk: 
-
-    python deep_banana_eater.py train --max-episodes 1800
+```commandline
+python deep_banana_eater.py train --max-episodes 1800
+```
 
 The above command runs 1800 training episodes and saves the results to the `runs` directory.
 

@@ -2,7 +2,7 @@
 
 A deep reinforcement learning agent collecting bananas.
 
-This is a Python implementation of deep-q-network based reinforcement learning agent 
+This is a Python implementation of deep q-network based reinforcement learning agent 
 learning to collect yellow bananas and avoid blue bananas in a simulated 3D environment. 
 
 ![Environment screenshot](env-screenshot.png)

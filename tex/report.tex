@@ -1,40 +1,72 @@
-\documentclass[a4paper,draft, 11pt]{amsart}
+\documentclass[a4paper,draft,11pt]{amsart}
 \usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}
 
-\title{Deep Banana Eater -- A Deep-Q-Network reinforcement learning agent}
-\author{Julian Wergieluk}\address{}\email{julian@wergieluk.com}
+\title{Deep Banana Eater -- A Deep Q-Network reinforcement learning agent}
+\author{Julian Wergieluk}\address{}\email{julian.wergieluk@risklab.com}
 \input{preamble}
 \input{commands}
 
 \usepackage[url=false,backend=biber]{biblatex}
 \addbibresource{literature.bib}
 
-
 \begin{document}
-
-\begin{abstract}
-Report.
-\end{abstract}
 
 \maketitle
 
+\begin{abstract}
+This short note provides a concise description of the model architecture and
+learning algorithms of the agent used in this project. We also report learning
+performance of the agent and give a list of possible future model improvements.
+\end{abstract}
 \renewcommand*{\thefootnote}{}\footnote{\today{}}
 
 \section{Description of the learning algorithm}
 
-\section{Training analysis}
+The algorithm used to solve the problem posed in this project closely resembles
+the algorithm proposed in \cite{mnih2015humanlevel}.
 
 The report clearly describes the learning algorithm, along with the chosen
 hyperparameters.
 It also describes the model architectures for any neural networks.
 
-A plot of rewards per episode is included to illustrate that the agent is able
-to receive an average reward (over 100 episodes) of at least +13.
-The submission reports the number of episodes needed to solve the environment.
+Summary of chosen hyperparameters.
 
-The submission has concrete future ideas for improving the agent's performance.
+\begin{table}
+%\centering
+\caption{List of hyperparameters and their values.}
+\begin{tabular}{|l|l|l|}
+    \hline
+Hyperparameter & Value & Description \\ 
+    \hline \hline
+    Learning rate of the ADAM optimizer & 0.0005 &  \\
+    Q-network update frequency & every 5 episodes &  \\
+    Replay buffer size & 100,000 &  \\
+    Batch size & 128  &  \\
+    Discount factor ($\gamma$) & 0.99 &  \\
+    \hline
+\end{tabular}
+\label{tab:hyperparameters}
+\end{table}
 
-\section{Closing remarks}
+\section{Training analysis}
+
+Despite its simplicity, the agent described in this report is able to solve the
+environment after completing under $1000$ episodes. In fact, in a training
+session depicted in Figure \ref{fig:avg-scores} the agent surpasses the average
+cumulative score of $13$ around episode $900$ and reaches the average
+cumulative reward of almost $16$ at the end of the training session.
+
+\begin{figure}[tb]
+    \centering
+    \includegraphics[width=\textwidth]{{avg-scores}.png}
+    \caption{Rolling window average of the cumulative reward for each episode
+    in a training session consisting of $1800$ episodes. The threshold average
+    cumulative reward of $13$ is reached around episode $900$.}
+    \label{fig:avg-scores}
+\end{figure}
+
+\section{Ideas for future work}
+
 
 %\nocite{meucci2009review, goodman2007}
 \printbibliography

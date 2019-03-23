@@ -9,27 +9,29 @@ learning to collect yellow bananas and avoid blue bananas in a simulated 3D envi
 
 # Description of the environment
 
-State and action space, rewards; when is the env solved?
+The task at hand consists of navigating a flat 3D environment (pictured above) with the goal of
+collecting (stepping over) yellow bananas while avoiding blue bananas.  
 
-For this project, you will train an agent to navigate (and collect bananas!) in
-a large, square world.
+We train a reinforcement learning agent to solve this task. The agent observers
+the environment though a 37-dimensional real vector (state space), consisting of the agents' 
+current velocity, along with ray-based perception of objects around agent's forward direction.
 
-A reward of +1 is provided for collecting a yellow banana, and a reward of -1
-is provided for collecting a blue banana. Thus, the goal of your agent is to
-collect as many yellow bananas as possible while avoiding blue bananas.
-
-The state space has 37 dimensions and contains the agent's velocity, along with
-ray-based perception of objects around the agent's forward direction. Given
-this information, the agent has to learn how to best select actions. Four
-discrete actions are available, corresponding to:
+The time is divided into turns. A game, also called an episode, ends after 300 turns. At the 
+end of each turn, the agent chooses one of the following actions:
 
     0 - move forward.
     1 - move backward.
     2 - turn left.
     3 - turn right.
 
-The task is episodic, and in order to solve the environment, your agent must
-get an average score of +13 over 100 consecutive episodes.
+The chosen action is executed by the environment and the agent receives a numerical reward. 
+Walking over a yellow banana produces a reward of +1 and walking over a blue
+banana results in a negative reward of -1. The goal of the agent is to collect as many
+yellow bananas as possible, while trying to avoid blue bananas, i.e., to maximize
+the cumulative reward at the end of the episode. 
+
+An episode ends after 300 turns. The environment is considered solved, if a trained agent 
+achieves an average score above 13 over 100 consecutive episodes.
 
 # Installation instructions
 
@@ -102,12 +104,3 @@ The above command runs 1800 training episodes and saves the results to the `runs
 deep_banana_eater is released under the MIT License. See LICENSE file for details.
 
 Copyright (c) 2019 Julian Wergieluk
-
-# Instructions from Udacity (delete this)
-
-a README that describes how someone not familiar with this project should use your 
-repository. The README should be designed for a general audience that may not be 
-familiar with the Nanodegree program; you should describe the environment that 
-you solved, along with how to install the requirements before running the code in your repository.
-
-

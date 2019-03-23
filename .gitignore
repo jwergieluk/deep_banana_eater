@@ -1,13 +1,3 @@
-### stupotr specific ignores
-
-sample_data/*.csv
-sample_data/*.txt
-*.pdf
-*.png
-*.tar.gz
-version.txt
-.mypy_cache
-
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -16,8 +16,8 @@ We train a reinforcement learning agent to solve this task. The agent observers
 the environment though a 37-dimensional real vector (state space), consisting of the agents' 
 current velocity, along with ray-based perception of objects around agent's forward direction.
 
-The time is divided into turns. A game, also called an episode, ends after 300 turns. At the 
-end of each turn, the agent chooses one of the following actions:
+The time is divided into turns. A episode ends after 300 turns. At each turn, 
+the agent chooses one of the following actions:
 
     0 - move forward.
     1 - move backward.
@@ -89,7 +89,7 @@ Use the following command to load a pretrained agent and watch the agent's inter
 python deep_banana_eater.py test --load-weights-from dqn-weights.bin
 ```
 
-## Training the agent
+## Train an agent
 
 The `train` command of the `deep_banana_eater.py` script can be used to train an agent 
 and save the learned parameters to disk: 

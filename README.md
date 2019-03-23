@@ -16,7 +16,7 @@ We train a reinforcement learning agent to solve this task. The agent observers
 the environment though a 37-dimensional real vector (state space), consisting of the agents' 
 current velocity, along with ray-based perception of objects around agent's forward direction.
 
-The time is divided into turns. A episode ends after 300 turns. At each turn, 
+The time is divided into turns. An episode ends after 300 turns. At each turn, 
 the agent chooses one of the following actions:
 
     0 - move forward.
@@ -30,8 +30,8 @@ banana results in a negative reward of -1. The goal of the agent is to collect a
 yellow bananas as possible, while trying to avoid blue bananas, i.e., to maximize
 the cumulative reward at the end of the episode. 
 
-An episode ends after 300 turns. The environment is considered solved, if a trained agent 
-achieves an average score above 13 over 100 consecutive episodes.
+The environment is considered solved, if a trained agent 
+achieves an average cumulative reward above 13 over 100 consecutive episodes.
 
 # Installation instructions
 

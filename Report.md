@@ -1,6 +1,13 @@
-# Report
+# Deep Banana Eater -- Report
 
-Julian Wergieluk
+## Description of the learning algorithm
+
+## Training analysis
+
+
+
+
+## Ideas for future development
 
 ## Requirements
 
@@ -14,3 +21,9 @@ submission reports the number of episodes needed to solve the environment.
 
 The submission has concrete future ideas for improving the agent's performance.
 
+
+## Closing remarks
+
+I was an amazing project. 
+
+Julian Wergieluk

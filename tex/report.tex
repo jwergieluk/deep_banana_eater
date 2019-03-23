@@ -29,7 +29,6 @@ the algorithm proposed in \cite{mnih2015humanlevel}.
 
 The agent is trained over a given number of episodes $n = 1,\cdots, 1800$,
 where each episode is divided into turns $t = 1,\cdots, 300$.
-
 The state space $\mathcal S$ of the environment is continuous and given by
 $\mathcal S = \mathbb R^{37}$, whereas the action space $\mathcal A = \left\{
 0,1,2,3 \right\}$ is discrete and independent of the current environment state
@@ -44,36 +43,34 @@ We count the turns across the episodes of a training session using $T =
 300(n-1) + t$. At each turn $T$ during the training time the agent chooses an
 action using an $\epsilon$-greedy policy derived from $Q_{\theta(T)}$ and
 $\epsilon = \epsilon(T) = \operatorname{exp}\left( -T \lambda \right)$ with
-constant decay rate $\lambda = 0.00002$.
+constant decay rate $\lambda = 0.00002$ (see Figure \ref{fig:epsilon}).
 
 Also, at each turn $t<300$, the experience tuple $\left( S_{t}, A_{t}, R_{t+1}, S_{t+1}
 \right)$ is saved to the replay buffer. If the turn number $t$ is divisible by
 $4$ and the replay buffer contains more than $B=128$ saved tuples, the $Q$
 function parameters $\theta$ are updated as follows: The algorithm
 samples $B$ experience tuples (without replacements) from the replay buffer, and
-for each tuple $(S_0, A_0, R_1, S_1)$ the following loss function $L_\theta$ is
-calculated
+for each tuple $(S_0, A_0, R_1, S_1)$ the following loss value 
+$L_\theta(S_0, A_0, R_1, S_1)$ is calculated
 \begin{align*}
-    L_{\theta} &= \left[ Q_{\theta}(S_0, A_0) - 
-    \left( R_1 + \gamma \operatorname{max_{a\in\mathcal A}} Q_{\theta}(S_1, a) \right) \right]^2
+L_\theta(S_0, A_0, R_1, S_1) &= \left[ 
+        R_1 + \gamma \operatorname{max_{a\in\mathcal A}} Q_{\theta}(S_1, a) - 
+        Q_{\theta}(S_0, A_0)
+    \right]^2.
 \end{align*}
 Assume that for each $(s, a) \in \mathcal S \times \mathcal A$ the function
-$\theta \mapsto Q_{\theta}(s,a)$ is differentiable. It follows that the function
-$\theta\mapsto L$ is also differentiable. We can calculate the (total) derivative
-$\frac{d L}{d\theta}$ and use the ADAM optimizer to update the parameter vector 
-$\theta$ with the aim of minimizing the loss $L_{\theta}$. We perform this 
-minimization step for each experience tuple from the sample batch.
+$\theta \mapsto Q_{\theta}(s,a)$ is differentiable. It follows that the
+function $\theta\mapsto L_\theta(S_0, A_0, R_1, S_1)$ is also differentiable.
+We can calculate the (total) derivative $\frac{d L}{d\theta}$ and use the ADAM
+optimizer to update the parameter vector $\theta$ with the aim of minimizing
+the loss $L_{\theta}$. We perform this minimization step for each experience
+tuple int the sample batch.
 
-To ensure the validity of the minimization step we use a deep neural network to 
-represent the function Q. The parameter vector $\theta$ contains the
-weight and bias parameters of that neural network.
+To ensure the validity of the minimization step, we use a deep neural network
+with tow fully connected layers to represent the function Q. The parameter
+vector $\theta$ contains the weight and bias parameters of that neural network.
 
-\subsection{The Q function parametrization}
-
-We use a deep neural network with two fully connected layers to parametrize the
-state-action value function $Q$. Hyperparameters of the network are given as
-follows (output of the \texttt{print} function invoked with the PyTorch network
-object as an argument):
+The neural network architecture is as follows: 
 
 \verbatiminput{qnet.txt}
 
@@ -82,13 +79,15 @@ object as an argument):
 \caption{List of hyperparameters and their values}
 \begin{tabular}{|l|l|l|}
     \hline
-Hyperparameter & Value & Description \\ 
+Hyperparameter & Value \\ 
     \hline \hline
-    Learning rate of the ADAM optimizer & 0.0005 &  \\
-    Q-network update frequency & every 5 episodes &  \\
-    Replay buffer size & 100,000 &  \\
-    Batch size & 128  &  \\
-    Discount factor ($\gamma$) & 0.99 &  \\
+    Learning rate of the ADAM optimizer & 0.0005 \\
+    Q-network update frequency & every 4 turns \\
+    Replay buffer size & 100,000 \\
+    Batch size & 128  \\
+    Discount factor ($\gamma$) & 0.99 \\
+    $\epsilon$ & Decays from $1$ to $0$ with \\
+    & the decay rate $\lambda = 0.00002$. \\
     \hline
 \end{tabular}
 \label{tab:hyperparameters}
@@ -97,7 +96,7 @@ Hyperparameter & Value & Description \\
 \section{Training analysis}
 
 Despite its simplicity, the agent described in this report is able to solve the
-environment after completing under $1000$ episodes. In fact, in a training
+environment after completing less than $1000$ episodes. In fact, in a training
 session depicted in Figure \ref{fig:avg-scores} the agent surpasses the average
 cumulative score of $13$ around episode $900$ and reaches the average
 cumulative reward of almost $16$ at the end of the training session.
@@ -111,8 +110,21 @@ cumulative reward of almost $16$ at the end of the training session.
     \label{fig:avg-scores}
 \end{figure}
 
+\begin{figure}[tb]
+    \centering
+    \includegraphics[width=\textwidth]{{epsilon}.pdf}
+    \caption{Decay of the $\epsilon$ parameter as function the 
+    training episode number.}
+    \label{fig:epsilon}
+\end{figure}
+
 \section{Ideas for future work}
 
+The training performance of the agent could be improved by implementing some or
+all of the ``rainbow'' improvements summarized in \cite{hessel2018rainbow}.  In
+particular, the prioritized experience replay is easy to implement and would
+likely lower the number of training episodes needed to reach the threshold of
+13 reward points. 
 
 %\nocite{meucci2009review, goodman2007}
 \printbibliography

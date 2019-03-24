@@ -54,28 +54,32 @@ git clone https://github.com/jwergieluk/deep_banana_eater.git
 2. Create a virtual environment with all the necessary packages and activate it:
 
 ```commandline
-conda create -n deep_banana_eater -c pytorch python=3.6 pytorch torchvision numpy pandas matplotlib requests
+conda create -n deep_banana_eater -c pytorch python=3.6 pytorch torchvision numpy pandas matplotlib requests click
 conda activate deep_banana_eater
 ```
 
 3. Clone Udacity's `deep-reinforcement-learning` repository and install the necessary Python package
 into the environment:
 ```commandline
-git clone https://github.com/udacity/deep-reinforcement-learning.git
+git clone --depth 1 https://github.com/udacity/deep-reinforcement-learning.git
 cd deep-reinforcement-learning/python 
 pip install .
+cd ../..
 ```
 
 4. Download the environment files using the provided script:
 ```commandline
+cd deep_banana_eater
 python download_external_dependencies.py
+cd ..
 ```
 
 5. Clone and install the `ml-agents` package provided by Unity: 
 ```commandline
-git clone https://github.com/Unity-Technologies/ml-agents.git
+git clone --depth 1 https://github.com/Unity-Technologies/ml-agents.git
 cd ml-agents/ml-agents
 pip install .
+cd ../../deep_banana_eater
 ```
 
 All development and testing of this code was performed on an Arch Linux system in Mar 2019. 

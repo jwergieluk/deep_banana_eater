@@ -93,6 +93,8 @@ Use the following command to load a pretrained agent and watch the agent's inter
 python deep_banana_eater.py test --load-weights-from dqn-weights.bin
 ```
 
+![Trained agent in action](trained-agent-video.gif)
+
 ## Train an agent
 
 The `train` command of the `deep_banana_eater.py` script can be used to train an agent 
